@@ -33,7 +33,7 @@ NEW_PLAYER_DATA = {
 	"intelligence": 1,
 	"strength": 1,
 	"weapon": None,
-	"xp": 0
+	"xp": 5
 }
 
 ########################################
