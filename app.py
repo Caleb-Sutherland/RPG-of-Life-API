@@ -157,6 +157,19 @@ def deleteTask():
 	except Exception as e:
 		return f"An Error Occured: {e}"
 
+#route to get a list of users tasks
+@app.route('/getTasks/<username>', methods=['GET'])
+def getTasks(username):
+	try:
+		tasks = player_cursor.document(username).collection('tasks').stream()
+		result = {}
+		for task in tasks:
+			result[task.to_dict()['id']] = task.to_dict()
+
+		return result, 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
 
 ########################################
 ## Friend Endpoints
