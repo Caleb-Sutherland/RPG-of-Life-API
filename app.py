@@ -87,9 +87,9 @@ def auth():
 		if result.to_dict() is not None:	#if user is found then check password using hash function
 			player = result.to_dict()
 			if bcrypt.check_password_hash(player['password'], req['password']):
-				return jsonify({"success": True}), 200
+				return jsonify({"message": "success"}), 200
 		
-		return jsonify({"Declined": False}), 200
+		return jsonify({"message": "declined"}), 200
 		
 	except Exception as e:
 		return f"An Error Occured: {e}"
