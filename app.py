@@ -62,7 +62,7 @@ def create():
 		else:
 			return jsonify({"message": "This username is already taken"}), 200
 
-		return jsonify({"success": True}), 200
+		return jsonify({"message": "success"}), 200
 	except Exception as e:
 		return f"An Error Occured: {e}"
 
