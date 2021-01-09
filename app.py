@@ -54,9 +54,9 @@ def create():
 
 		player = player_cursor.document(data['username']).get().to_dict()
 		if player is None:
-			player_data.password = bcrypt.generate_password_hash(data['password'])
-			player_data.username = data['username']
-			player_data.email = data['email']
+			player_data["password"] = bcrypt.generate_password_hash(data['password'])
+			player_data["username"] = data['username']
+			player_data["email"] = data['email']
 
 			player_cursor.document(data['username']).set(player_data)
 		else:
