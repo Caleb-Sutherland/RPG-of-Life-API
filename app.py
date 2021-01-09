@@ -22,6 +22,20 @@ player_cursor = db.collection('player')
 challenge_cursor = db.collection('challenge')
 shop = db.collection('shop')
 
+
+NEW_PLAYER_DATA = {
+	"armor": None,
+	"charisma": 1,
+	"coins": 0,
+	"creativity": 1,
+	"hat": None,
+	"health": 1,
+	"intelligence": 1,
+	"strength": 1,
+	"weapon": None,
+	"xp": 0
+}
+
 ########################################
 ## Player Endpoints
 ########################################
@@ -34,12 +48,17 @@ def create():
 	#friends, tasks, and itemsOwned are collections within a player that have their own endpoints
 
 	try:
-		format = request.json
+		data = request.json
 
-		player = player_cursor.document(format['username']).get().to_dict()
+		player_data = NEW_PLAYER_DATA
+
+		player = player_cursor.document(data['username']).get().to_dict()
 		if player is None:
-			format['password'] = bcrypt.generate_password_hash(format['password'])
-			player_cursor.document(format['username']).set(format)
+			player_data.password = bcrypt.generate_password_hash(data['password'])
+			player_data.username = data['username']
+			player_data.email = data['email']
+
+			player_cursor.document(data['username']).set(player_data)
 		else:
 			return jsonify({"message": "This username is already taken"}), 200
 
