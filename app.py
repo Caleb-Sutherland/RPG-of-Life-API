@@ -321,7 +321,7 @@ def purchaseItem():
 		return f"An Error Occured: {e}"
 
 
-#route to purchase an item for a player
+#route to equip an item for a player
 @app.route('/equipItem', methods=['PUT', 'POST'])
 def equipItem():
 	#format
