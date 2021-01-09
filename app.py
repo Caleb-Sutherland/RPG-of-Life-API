@@ -5,9 +5,11 @@ import os
 from flask import Flask, request, jsonify
 from firebase_admin import credentials, firestore, initialize_app
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 
 # Initialize Flask App
 app = Flask(__name__)
+CORS(app)
 # Initialize Firestore DB
 cred = credentials.Certificate('key.json')
 default_app = initialize_app(cred)
