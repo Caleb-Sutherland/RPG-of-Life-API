@@ -33,8 +33,14 @@ def create():
 
 	try:
 		format = request.json
-		format['password'] = bcrypt.generate_password_hash(format['password'])
-		player_cursor.document(format['username']).set(format)
+
+		player = player_cursor.document(format['username']).get().to_dict()
+		if player is None:
+			format['password'] = bcrypt.generate_password_hash(format['password'])
+			player_cursor.document(format['username']).set(format)
+		else:
+			return jsonify({"message": "This username is already taken"}), 200
+
 		return jsonify({"success": True}), 200
 	except Exception as e:
 		return f"An Error Occured: {e}"
