@@ -20,13 +20,17 @@ player_cursor = db.collection('player')
 challenge_cursor = db.collection('challenge')
 shop = db.collection('shop')
 
+########################################
+## Player Endpoints
+########################################
 
 #route to add new users to the database
 @app.route('/addPlayer', methods=['POST'])
 def create():
 	#format
-	#username, email, password, xp, coins, health, strength, intelligence, creativity, charisma, friends (object of its own), tasks (object of its own), hat, armor, weapon, itemsOwned (object of its own)
-	
+	#username, email, password, xp, coins, health, strength, intelligence, creativity, charisma, hat, armor, weapon
+	#friends, tasks, and itemsOwned are collections within a player that have their own endpoints
+
 	try:
 		format = request.json
 		format['password'] = bcrypt.generate_password_hash(format['password'])
@@ -37,7 +41,7 @@ def create():
 
 
 #returns a specific player
-#Note: must replace spaces in name with %20 because a url param cannot have spaces 
+#NOTE: must replace spaces in name with %20 because a url param cannot have spaces 
 @app.route('/getPlayer/<username>', methods=['GET'])
 def find(username):
 	try:   
@@ -81,6 +85,261 @@ def auth():
 		
 	except Exception as e:
 		return f"An Error Occured: {e}"
+
+
+########################################
+## Task Endpoints
+########################################
+
+#this endpoint is to add tasks for a specific user
+#NOTE: task id's are actually strings, not integers
+@app.route('/addTask', methods=['POST'])
+def createTask():
+	#format
+	#id, name, statType, statVal, completionTime for task (probably empty when adding (but make sure to add it))
+	#username to be entered for
+	
+	try:
+		format = request.json
+		username = format.pop('username')
+		player_cursor.document(username).collection('tasks').document(format['id']).set(format)
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+
+@app.route('/completeTask', methods=['POST', 'PUT'])
+def complete():
+    #must pass a username so client knows who to update
+	#must pass task id so task can be completed
+	try:
+		format = request.json
+		username = format.pop('username')
+		id = format.pop('id')
+
+		#check to see if task has been completed (date is initially "" before being completed)
+		task = player_cursor.document(username).collection('tasks').document(id).get().to_dict()
+		if task['completionTime'] != "\"\"":
+			return jsonify({"message": "This task has already been completed!"}), 200
+
+		#update task completion time
+		format['completionTime'] = firestore.SERVER_TIMESTAMP
+		player_cursor.document(username).collection('tasks').document(id).update(format)
+
+		#update player stat and xp
+		
+		player = player_cursor.document(username).get().to_dict()
+		player_cursor.document(username).update({task['statType']: player[task['statType']]+task['statVal'], "xp": player['xp'] + task['statVal']})
+
+		return jsonify({"success": True}), 200
+
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+
+@app.route('/deleteTask', methods=['DELETE'])
+def deleteTask():
+    #must pass a username so client knows who to delete
+	#must pass task id so task can be deleted
+	try:
+		format = request.json
+		username = format.pop('username')
+		id = format.pop('id')
+		player_cursor.document(username).collection('tasks').document(id).delete()
+		return jsonify({"success": True}), 200
+
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+
+########################################
+## Friend Endpoints
+########################################
+
+#endpoint to add friends
+@app.route('/addFriend', methods=['POST'])
+def addFriend():
+	#format
+	#username and friend
+	
+	try:
+		format = request.json
+		username = format.pop('username')
+		player_cursor.document(username).collection('friends').document(format['friend']).set(format)
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+
+########################################
+## Challenge Endpoints
+########################################
+
+#route to add challenges
+@app.route('/addChallenge', methods=['POST'])
+def addChallenge():
+	#format
+	#sender, receiver
+	
+	try:
+		format = request.json
+
+		format['accepted'] = False
+		format['completed'] = False
+		sender = player_cursor.document(format['sender']).get().to_dict()
+		format['senderStartXp'] = sender['xp']
+		receiver = player_cursor.document(format['receiver']).get().to_dict()
+		format['receiverStartXp'] = receiver['xp']
+		format['senderEndXp'] = -1
+		format['receiverEndXp'] = -1
+		format['start'] = ""
+
+		key = format['sender'] + "-" + format['receiver']
+		challenge_cursor.document(key).set(format)
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+#endpoint updates a challenge to be accepted
+@app.route('/acceptChallenge', methods=['POST', 'PUT'])
+def acceptChallenge():
+	#format
+	#sender, receiver
+	
+	try:
+		format = request.json
+		key = format['sender'] + "-" + format['receiver']
+		challenge_cursor.document(key).update({"accepted": True, 'start': firestore.SERVER_TIMESTAMP})
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+#endpoint updates a challenge to be completed
+@app.route('/completeChallenge', methods=['POST', 'PUT'])
+def completeChallenge():
+	#format
+	#sender, receiver	
+	try:
+		#add stuff to winner
+		format = request.json
+		key = format['sender'] + "-" + format['receiver']
+
+		#get the current challenge data and player data
+		curr_challenge = challenge_cursor.document(key).get().to_dict()
+		sender = player_cursor.document(format['sender']).get().to_dict()
+		receiver = player_cursor.document(format['receiver']).get().to_dict()
+
+		#adjust coins based on who won
+		senderGains = sender['xp'] - curr_challenge['senderStartXp']
+		receiverGains = receiver['xp'] - curr_challenge['receiverStartXp']
+		if senderGains > receiverGains:
+			player_cursor.document(sender['username']).update({"coins": sender['coins']+100})
+		elif senderGains < receiverGains:
+			player_cursor.document(receiver['username']).update({"coins": receiver['coins']+100})
+
+
+		challenge_cursor.document(key).update({"completed": True, "senderEndXp": sender['xp'], "receiverEndXp": receiver['xp']})
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+#endpoint returns a specific challenge
+@app.route('/getChallenge/<sender>/<receiver>', methods=['GET'])
+def getChallenge(sender, receiver):
+	#format
+	#sender, receiver
+	
+	try:
+		key = sender + "-" + receiver
+		#get challenge and players
+		challenge = challenge_cursor.document(key).get().to_dict()
+		send = player_cursor.document(sender).get().to_dict()
+		rec = player_cursor.document(receiver).get().to_dict()
+
+		#calculate the current gains in xp since challenge began
+		challenge['senderGains'] = send['xp'] - challenge['senderStartXp']
+		challenge['receiverGains'] = rec['xp'] - challenge['receiverStartXp']
+
+		return challenge, 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+
+########################################
+## Items Endpoints
+########################################
+
+
+#route to add items to the shop
+@app.route('/addItem', methods=['POST'])
+def addItem():
+	#format
+	#name, url, price, type (hat, weapon, or armor)
+	
+	try:
+		format = request.json
+		shop.document(format['name']).set(format)
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+#route to get all shop items
+@app.route('/getShop', methods=['GET'])
+def getShop():
+	try:
+		items = shop.stream()
+		result = {}
+		for item in items:
+			result[item.to_dict()['name']] = item.to_dict()
+
+		return result, 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+#route to purchase an item for a player
+@app.route('/purchaseItem', methods=['POST'])
+def purchaseItem():
+	#format
+	#username, name (name of item)
+	
+	try:
+		format = request.json
+		item = shop.document(format['name']).get().to_dict()
+		player = player_cursor.document(format['username']).get().to_dict()
+
+		#execute transaction
+		if player['coins'] >= item['price']:
+			player_cursor.document(format['username']).update({"coins": player['coins']-item['price']})
+		else:
+			return jsonify({"message": "Insufficient Funds"}), 200
+
+		#add item to itemsOwned list name, type, url
+		item.pop('price')
+		player_cursor.document(format['username']).collection('itemsOwned').document(format['name']).set(item)
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
+
+#route to purchase an item for a player
+@app.route('/equipItem', methods=['PUT', 'POST'])
+def equipItem():
+	#format
+	#username, name (name of item)
+	try:
+		format = request.json
+		item = player_cursor.document(format['username']).collection('itemsOwned').document(format['name']).get().to_dict()
+
+		if item is not None:
+			player_cursor.document(format['username']).update({item['type']: item})
+		else:
+			return jsonify({"message": "player does not have this item (or player doesn't exist)"}), 200
+
+	
+		return jsonify({"success": True}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
 
 
 port = int(os.environ.get('PORT', 8080))
