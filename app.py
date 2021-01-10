@@ -427,6 +427,19 @@ def equipItem():
 	except Exception as e:
 		return f"An Error Occured: {e}"
 
+#route to get a list of users tasks
+@app.route('/getItemsOwned/<username>', methods=['GET'])
+def getItems(username):
+	try:
+		items = player_cursor.document(username).collection('itemsOwned').stream()
+		result = {}
+		for item in items:
+			result[item.to_dict()['name']] = item.to_dict()
+
+		return result, 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
 
 
 port = int(os.environ.get('PORT', 8080))
