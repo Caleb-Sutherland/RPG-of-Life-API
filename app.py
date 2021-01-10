@@ -214,10 +214,34 @@ def addFriend():
 @app.route('/getFriends/<username>', methods=['GET'])
 def getFriends(username):
 	try:
+		#4 states for challenges: accept/decline, pending, view, challenge
+		#accept/decline if you are receiver and friend is sender + accepted = false
+		#pending if you are sender and friend is receiver + accepted = false
+		#view if you are receiver OR sender + accepted = true
+		#challenge if friend is niether a sender or receiver
+
 		friends = player_cursor.document(username).collection('friends').stream()
+		challenges = challenge_cursor.stream()
 		result = {}
 		for friend in friends:
-			result[friend.to_dict()['friend']] = friend.to_dict()
+			friendName = friend.to_dict()['friend']
+			state = "challenge"
+			for challenge in challenges:
+				receiver = challenge.to_dict()['receiver']
+				sender = challenge.to_dict()['sender']
+				accepted = challenge.to_dict()['accepted']
+				
+				if(friendName == sender and username == receiver and accepted == False):
+					state = "accept"
+				elif(friendName == receiver and username == sender and accepted == False):
+					state = "pending"
+				elif(username == receiver or username == sender and accepted == True):
+					state = "view"
+			returnObject = {
+				"friend": friendName,
+				"state": state
+			}
+			result[friendName] = returnObject
 
 		return result, 200
 	except Exception as e:
