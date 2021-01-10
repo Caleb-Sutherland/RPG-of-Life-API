@@ -209,6 +209,19 @@ def addFriend():
 		return jsonify({"success": True}), 200
 	except Exception as e:
 		return f"An Error Occured: {e}"
+	
+#route to get friends
+@app.route('/getFriends/<username>', methods=['GET'])
+def getTasks(username):
+	try:
+		friends = player_cursor.document(username).collection('friends').stream()
+		result = {}
+		for friend in friends:
+			result[friend.to_dict()['id']] = friend.to_dict()
+
+		return result, 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
 
 
 ########################################
