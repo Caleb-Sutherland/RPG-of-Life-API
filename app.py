@@ -200,13 +200,25 @@ def getTasks(username):
 @app.route('/addFriend', methods=['POST'])
 def addFriend():
 	#format
-	#username and friend
-	
+	#username and friend	
 	try:
 		format = request.json
 		username = format.pop('username')
+
+		#checking to make sure the friend you are trying to add exists and that you dont already have them as a friend
+		friend = player_cursor.document(format['friend']).get().to_dict()
+		if friend is None:
+			return jsonify({"message": "User does not exist."}), 200
+
+		friends = player_cursor.document(username).collection('friends').stream()
+		for person in friends:
+			if person.to_dict()['friend'] == format['friend']:
+				return jsonify({"message": "You already have that friend!"}), 200
+
+		#add eachother as friends for both users (will add "accept friend" button later, for now it just auto adds as friend)
 		player_cursor.document(username).collection('friends').document(format['friend']).set(format)
-		return jsonify({"success": True}), 200
+		player_cursor.document(format['friend']).collection('friends').document(username).set({"friend": username})
+		return jsonify({"message": True}), 200
 	except Exception as e:
 		return f"An Error Occured: {e}"
 	
@@ -393,6 +405,13 @@ def purchaseItem():
 		format = request.json
 		item = shop.document(format['name']).get().to_dict()
 		player = player_cursor.document(format['username']).get().to_dict()
+
+		#check to see if player already owns item
+		items = player_cursor.document(format['username']).collection('itemsOwned').stream()
+		for obj in items:
+			if obj.to_dict()['name'] == format['name']:
+				return jsonify({"message": "You already own that item!"}), 200
+
 
 		#execute transaction
 		if player['coins'] >= item['price']:
