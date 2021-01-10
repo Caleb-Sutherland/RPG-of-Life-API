@@ -245,19 +245,23 @@ def getFriends(username):
 			friendName = friend.to_dict()['friend']
 			state = "challenge"
 
-			#BETTER WAY TO DO THIS
-			#filter the search on the challenges from the db to only return challenges where username == receiver or sender
 			for challenge in userChallenges:
 				receiver = challenge.to_dict()['receiver']
 				sender = challenge.to_dict()['sender']
 				accepted = challenge.to_dict()['accepted']
-		
+	
 				if(friendName == sender and username == receiver and accepted == False):
 					state = "accept"
+					break
+					
 				elif(friendName == receiver and username == sender and accepted == False):
 					state = "pending"
+					break
+					
 				elif((username == receiver or username == sender) and (friendName == sender or friendName == receiver) and accepted == True):
 					state = "view"
+					break
+					
 			returnObject = {
 				"friend": friendName,
 				"state": state
