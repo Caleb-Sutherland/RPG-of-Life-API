@@ -254,11 +254,11 @@ def getFriends(username):
 				accepted = challenge.to_dict()['accepted']
 				completed = challenge.to_dict()['completed']
 	
-				if(friendName == sender and username == receiver and accepted == False):
+				if(friendName == sender and username == receiver and accepted == False and completed == False):
 					state = "accept"
 					break
 					
-				elif(friendName == receiver and username == sender and accepted == False):
+				elif(friendName == receiver and username == sender and accepted == False and completed == False):
 					state = "pending"
 					break
 					
