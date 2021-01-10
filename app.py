@@ -217,7 +217,7 @@ def getTasks(username):
 		friends = player_cursor.document(username).collection('friends').stream()
 		result = {}
 		for friend in friends:
-			result[friend.to_dict()['id']] = friend.to_dict()
+			result[friend.to_dict()['friend']] = friend.to_dict()
 
 		return result, 200
 	except Exception as e:
