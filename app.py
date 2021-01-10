@@ -224,7 +224,7 @@ def getFriends(username):
 		challenges = challenge_cursor.stream()
 		userChallenges = []
 		for challenge in challenges:
-			if challenge.to_dict()['receiver'] == username or challenge.to_dict()['sender'] == username:
+			if challenge.to_dict()['receiver'] == username or challenge.to_dict()['sender'] == username:	
 				userChallenges.append(challenge)
 
 		result = {}
@@ -239,12 +239,12 @@ def getFriends(username):
 				receiver = challenge.to_dict()['receiver']
 				sender = challenge.to_dict()['sender']
 				accepted = challenge.to_dict()['accepted']
-				
+		
 				if(friendName == sender and username == receiver and accepted == False):
 					state = "accept"
 				elif(friendName == receiver and username == sender and accepted == False):
 					state = "pending"
-				elif(username == receiver or username == sender and accepted == True):
+				elif((username == receiver or username == sender) and (friendName == sender or friendName == receiver) and accepted == True):
 					state = "view"
 			returnObject = {
 				"friend": friendName,
