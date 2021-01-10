@@ -24,15 +24,17 @@ shop = db.collection('shop')
 
 
 NEW_PLAYER_DATA = {
-	"armor": None,
 	"charisma": 1,
 	"coins": 0,
 	"creativity": 1,
-	"hat": None,
 	"health": 1,
 	"intelligence": 1,
 	"strength": 1,
+	"armor": None,
 	"weapon": None,
+	"boots": None,
+	"pants": None,
+	"hat": None,
 	"xp": 5
 }
 
@@ -463,6 +465,31 @@ def getItems(username):
 	except Exception as e:
 		return f"An Error Occured: {e}"
 
+#route to get a list of users tasks
+@app.route('/getItemsEquipped/<username>', methods=['GET'])
+def getItemsEquipped(username):
+	try:
+		if username:
+			player = player_cursor.document(username).get()
+			player = player.to_dict()
+			
+			if player is not None:
+				items_equipped = {		
+					"armor": player.get("armor", None),
+					"weapon": player.get("weapon", None),
+					"boots": player.get("boots", None),
+					"pants": player.get("pants", None),
+					"hat": player.get("hat", None)
+				}
+
+				return jsonify(items_equipped), 200
+
+			return "User does not exist", 200
+		else:
+			return "No username was passed!", 200
+
+	except Exception as e:
+		return f"An Error Occured: {e}"
 
 
 port = int(os.environ.get('PORT', 8080))
