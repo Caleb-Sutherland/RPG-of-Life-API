@@ -227,7 +227,6 @@ def getFriends(username):
 			if challenge.to_dict()['receiver'] == username or challenge.to_dict()['sender'] == username:
 				userChallenges.append(challenge)
 
-
 		result = {}
 		count = 0
 		for friend in friends:
