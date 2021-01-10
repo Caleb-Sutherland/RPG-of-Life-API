@@ -223,6 +223,7 @@ def getFriends(username):
 		friends = player_cursor.document(username).collection('friends').stream()
 		challenges = challenge_cursor.stream()
 		result = {}
+		count = 0
 		for friend in friends:
 			friendName = friend.to_dict()['friend']
 			state = "challenge"
@@ -244,7 +245,8 @@ def getFriends(username):
 				"friend": friendName,
 				"state": state
 			}
-			result[friendName] = returnObject
+			result[count] = returnObject
+			count = count + 1
 
 		return result, 200
 	except Exception as e:
