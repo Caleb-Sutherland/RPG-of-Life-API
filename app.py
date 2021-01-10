@@ -222,6 +222,12 @@ def getFriends(username):
 
 		friends = player_cursor.document(username).collection('friends').stream()
 		challenges = challenge_cursor.stream()
+		userChallenges = []
+		for challenge in challenges:
+			if challenge.to_dict()['receiver'] == username or challenge.to_dict()['sender'] == username:
+				userChallenges.append(challenge)
+
+
 		result = {}
 		count = 0
 		for friend in friends:
@@ -230,7 +236,7 @@ def getFriends(username):
 
 			#BETTER WAY TO DO THIS
 			#filter the search on the challenges from the db to only return challenges where username == receiver or sender
-			for challenge in challenges:
+			for challenge in userChallenges:
 				receiver = challenge.to_dict()['receiver']
 				sender = challenge.to_dict()['sender']
 				accepted = challenge.to_dict()['accepted']
