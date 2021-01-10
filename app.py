@@ -360,8 +360,12 @@ def getChallenge(sender, receiver):
 		key = sender + "-" + receiver
 		#get challenge and players
 		challenge = challenge_cursor.document(key).get().to_dict()
-		send = player_cursor.document(sender).get().to_dict()
-		rec = player_cursor.document(receiver).get().to_dict()
+		if challenge is None:
+			key = receiver + "-" + sender
+			challenge = challenge_cursor.document(key).get().to_dict()
+
+		send = player_cursor.document(challenge['sender']).get().to_dict()
+		rec = player_cursor.document(challenge['receiver']).get().to_dict()
 
 		#calculate the current gains in xp since challenge began
 		challenge['senderGains'] = send['xp'] - challenge['senderStartXp']
