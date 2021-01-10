@@ -2,6 +2,7 @@
 
 # Required Imports
 import os
+import datetime
 from flask import Flask, request, jsonify
 from firebase_admin import credentials, firestore, initialize_app
 from flask_bcrypt import Bcrypt
@@ -249,6 +250,7 @@ def getFriends(username):
 				receiver = challenge.to_dict()['receiver']
 				sender = challenge.to_dict()['sender']
 				accepted = challenge.to_dict()['accepted']
+				completed = challenge.to_dict()['completed']
 	
 				if(friendName == sender and username == receiver and accepted == False):
 					state = "accept"
@@ -258,7 +260,7 @@ def getFriends(username):
 					state = "pending"
 					break
 					
-				elif((username == receiver or username == sender) and (friendName == sender or friendName == receiver) and accepted == True):
+				elif((username == receiver or username == sender) and (friendName == sender or friendName == receiver) and accepted == True and completed == False):
 					state = "view"
 					break
 					
@@ -295,7 +297,7 @@ def addChallenge():
 		format['receiverStartXp'] = receiver['xp']
 		format['senderEndXp'] = -1
 		format['receiverEndXp'] = -1
-		format['start'] = ""
+		format['start'] = firestore.SERVER_TIMESTAMP
 
 		key = format['sender'] + "-" + format['receiver']
 		challenge_cursor.document(key).set(format)
@@ -367,11 +369,47 @@ def getChallenge(sender, receiver):
 	except Exception as e:
 		return f"An Error Occured: {e}"
 
+#endpoint returns a specific challenge
+@app.route('/checkChallenges/<username>', methods=['GET'])
+def checkChallenges(username):
+	#format
+	#username
+	
+	try:
+		challenges = challenge_cursor.stream()
+		for challenge in challenges:
+			if challenge.to_dict()['receiver'] == username or challenge.to_dict()['sender'] == username:	
+				#check times
+				time = challenge.to_dict()['start']
+				week = (time + datetime.timedelta(days=7)) #find the date a week from start time
+				#if the current time is passed a week, update the challenge to be completed
+				if(datetime.datetime.now(datetime.timezone.utc) >= week and challenge.to_dict()['completed'] == False):
+					key = challenge.to_dict()['sender'] + "-" + challenge.to_dict()['receiver']
+					challenge_cursor.document(key).update({"completed": True})
+
+					#if it was an ongoing challenge (not one that was never accepted)
+					if(challenge.to_dict()['accepted'] == True):
+						sender = player_cursor.document(challenge.to_dict()['sender']).get().to_dict()
+						receiver = player_cursor.document(challenge.to_dict()['receiver']).get().to_dict()
+
+						#adjust coins based on who won
+						senderGains = sender['xp'] - challenge.to_dict()['senderStartXp']
+						receiverGains = receiver['xp'] - challenge.to_dict()['receiverStartXp']
+						if senderGains > receiverGains:
+							player_cursor.document(sender['username']).update({"coins": sender['coins']+100})
+						elif senderGains < receiverGains:
+							player_cursor.document(receiver['username']).update({"coins": receiver['coins']+100})
+
+						challenge_cursor.document(key).update({"senderEndXp": sender['xp'], "receiverEndXp": receiver['xp']})
+
+		return jsonify({"message": "success"}), 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
 
 ########################################
 ## Items Endpoints
 ########################################
-
 
 #route to add items to the shop
 @app.route('/addItem', methods=['POST'])
