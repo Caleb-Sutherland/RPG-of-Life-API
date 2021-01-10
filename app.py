@@ -212,7 +212,7 @@ def addFriend():
 	
 #route to get friends
 @app.route('/getFriends/<username>', methods=['GET'])
-def getTasks(username):
+def getFriends(username):
 	try:
 		friends = player_cursor.document(username).collection('friends').stream()
 		result = {}
