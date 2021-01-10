@@ -226,6 +226,9 @@ def getFriends(username):
 		for friend in friends:
 			friendName = friend.to_dict()['friend']
 			state = "challenge"
+
+			#BETTER WAY TO DO THIS
+			#filter the search on the challenges from the db to only return challenges where username == receiver or sender
 			for challenge in challenges:
 				receiver = challenge.to_dict()['receiver']
 				sender = challenge.to_dict()['sender']
