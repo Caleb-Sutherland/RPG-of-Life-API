@@ -31,7 +31,7 @@ NEW_PLAYER_DATA = {
 	"health": 1,
 	"intelligence": 1,
 	"strength": 1,
-	"armor": None,
+	"chest": None,
 	"weapon": None,
 	"boots": None,
 	"pants": None,
@@ -513,7 +513,7 @@ def getItemsEquipped(username):
 			
 			if player is not None:
 				items_equipped = {		
-					"armor": player.get("armor", None),
+					"chest": player.get("chest", None),
 					"weapon": player.get("weapon", None),
 					"boots": player.get("boots", None),
 					"pants": player.get("pants", None),
