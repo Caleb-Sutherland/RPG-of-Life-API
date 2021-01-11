@@ -3,6 +3,7 @@
 # Required Imports
 import os
 import datetime
+import uuid
 from flask import Flask, request, jsonify
 from firebase_admin import credentials, firestore, initialize_app
 from flask_bcrypt import Bcrypt
@@ -126,12 +127,14 @@ def auth():
 @app.route('/addTask', methods=['POST'])
 def createTask():
 	#format
-	#id, name, statType, statVal, completionTime for task (probably empty when adding (but make sure to add it))
+	#name, statType, statVal, for task (probably empty when adding (but make sure to add it))
 	#username to be entered for
 	
 	try:
 		format = request.json
 		username = format.pop('username')
+		format['completionTime'] = ""
+		format['id'] = str(uuid.uuid4())
 		player_cursor.document(username).collection('tasks').document(format['id']).set(format)
 		return jsonify({"success": True}), 200
 	except Exception as e:
