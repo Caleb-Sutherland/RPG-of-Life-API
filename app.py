@@ -205,7 +205,7 @@ def getTasks(username):
 		for task in tasks:
 			completionTime = task.to_dict()['completionTime']
 			print(completionTime)
-			if completionTime < now and task.to_dict()['completedToday']:
+			if completionTime != "\"\"" and completionTime < now and task.to_dict()['completedToday']:
 				player_cursor.document(username).collection('tasks').document(task.to_dict()['id']).update({"completedToday": False})
 				temp = player_cursor.document(username).collection('tasks').document(task.to_dict()['id']).get().to_dict()
 				result[temp['id']] = temp
