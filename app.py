@@ -134,6 +134,7 @@ def createTask():
 		format = request.json
 		username = format.pop('username')
 		format['completionTime'] = ""
+		format['completedToday'] = False
 		format['id'] = str(uuid.uuid4())
 		player_cursor.document(username).collection('tasks').document(format['id']).set(format)
 		return jsonify({"success": True}), 200
@@ -153,14 +154,21 @@ def complete():
 		#check to see if task has been completed (date is initially "" before being completed)
 		task = player_cursor.document(username).collection('tasks').document(id).get().to_dict()
 		if task['completionTime'] != "\"\"":
-			return jsonify({"message": "This task has already been completed!"}), 200
-
+			now = datetime.datetime.today()
+			now = now.replace(hour=0, minute=0, second=0, microsecond=0)
+			now = now.replace(tzinfo=datetime.timezone.utc)
+			completionTime = task['completionTime']
+			if(completionTime > now):
+				return jsonify({"message": "You can only complete this task once a day!"})
+			else:
+				print("This is valid to complete")
+			
 		#update task completion time
 		format['completionTime'] = firestore.SERVER_TIMESTAMP
+		format['completedToday'] = True
 		player_cursor.document(username).collection('tasks').document(id).update(format)
 
 		#update player stat and xp
-		
 		player = player_cursor.document(username).get().to_dict()
 		player_cursor.document(username).update({task['statType']: player[task['statType']]+task['statVal'], "xp": player['xp'] + task['statVal']})
 
@@ -190,8 +198,19 @@ def getTasks(username):
 	try:
 		tasks = player_cursor.document(username).collection('tasks').stream()
 		result = {}
+		now = datetime.datetime.today()
+		now = now.replace(hour=0, minute=0, second=0, microsecond=0)
+		now = now.replace(tzinfo=datetime.timezone.utc)
+		
 		for task in tasks:
-			result[task.to_dict()['id']] = task.to_dict()
+			completionTime = task.to_dict()['completionTime']
+			print(completionTime)
+			if completionTime < now and task.to_dict()['completedToday']:
+				player_cursor.document(username).collection('tasks').document(task.to_dict()['id']).update({"completedToday": False})
+				temp = player_cursor.document(username).collection('tasks').document(task.to_dict()['id']).get().to_dict()
+				result[temp['id']] = temp
+			else:
+				result[task.to_dict()['id']] = task.to_dict()
 
 		return result, 200
 	except Exception as e:
