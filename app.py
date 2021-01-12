@@ -327,6 +327,10 @@ def addChallenge():
 	
 	try:
 		format = request.json
+		tempKey = format['receiver'] + "-" + format['sender']
+		challenge = challenge_cursor.document(tempKey).get().to_dict()
+		if challenge is not None:
+			challenge_cursor.document(tempKey).delete()
 
 		format['accepted'] = False
 		format['completed'] = False
