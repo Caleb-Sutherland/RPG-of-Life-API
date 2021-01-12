@@ -246,6 +246,21 @@ def addFriend():
 		return jsonify({"message": True}), 200
 	except Exception as e:
 		return f"An Error Occured: {e}"
+
+@app.route('/getChallenges/<username>', methods=['GET'])
+def getChallenges(username):
+	try:
+		challenges = challenge_cursor.stream()
+		userChallenges = {}
+		for challenge in challenges:
+			if challenge.to_dict()['receiver'] == username:	
+				userChallenges[challenge.to_dict()['sender']] = challenge.to_dict()
+			elif challenge.to_dict()['sender'] == username:
+				userChallenges[challenge.to_dict()['receiver']] = challenge.to_dict()
+		
+		return userChallenges, 200
+	except Exception as e:
+		return f"An Error Occured: {e}"
 	
 #route to get friends
 @app.route('/getFriends/<username>', methods=['GET'])
