@@ -153,7 +153,7 @@ def complete():
 
 		#check to see if task has been completed (date is initially "" before being completed)
 		task = player_cursor.document(username).collection('tasks').document(id).get().to_dict()
-		if task['completionTime'] != "\"\"":
+		if task['completionTime'] != "":
 			now = datetime.datetime.today()
 			now = now.replace(hour=0, minute=0, second=0, microsecond=0)
 			now = now.replace(tzinfo=datetime.timezone.utc)
