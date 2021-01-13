@@ -4,6 +4,8 @@
 import os
 import datetime
 import uuid
+import js2py
+import random
 from flask import Flask, request, jsonify
 from firebase_admin import credentials, firestore, initialize_app
 from flask_bcrypt import Bcrypt
@@ -23,6 +25,7 @@ bcrypt = Bcrypt(app)
 player_cursor = db.collection('player')
 challenge_cursor = db.collection('challenge')
 shop = db.collection('shop')
+lore = db.collection('lore')
 
 
 NEW_PLAYER_DATA = {
@@ -55,14 +58,17 @@ def create():
 		data = request.json
 
 		player_data = NEW_PLAYER_DATA
-
 		player = player_cursor.document(data['username']).get().to_dict()
 		if player is None:
 			player_data["password"] = bcrypt.generate_password_hash(data['password'])
 			player_data["username"] = data['username']
 			player_data["email"] = data['email']
-
 			player_cursor.document(data['username']).set(player_data)
+			
+			eval_res, jsFile = js2py.run_file('backstories.js')
+			num = random.randrange(1,3)
+			story = jsFile.nameGen(num)
+			lore.document(data['username']).set({"username": data['username'], "lore": story})
 		else:
 			return jsonify({"message": "This username is already taken"}), 200
 
