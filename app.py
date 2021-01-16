@@ -124,6 +124,18 @@ def auth():
 		return f"An Error Occured: {e}"
 
 
+@app.route('/getLore/<username>', methods=['GET'])
+def getLore(username):
+	try:   
+		if username:
+			story = lore.document(username).get().to_dict()
+			return story, 200
+		else:
+			return "No username was passed!", 200
+
+	except Exception as e:
+		return f"An Error Occured: {e}"
+
 ########################################
 ## Task Endpoints
 ########################################
