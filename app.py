@@ -427,8 +427,13 @@ def getChallenge(sender, receiver):
 		rec = player_cursor.document(challenge['receiver']).get().to_dict()
 
 		#calculate the current gains in xp since challenge began
-		challenge['senderGains'] = send['xp'] - challenge['senderStartXp']
-		challenge['receiverGains'] = rec['xp'] - challenge['receiverStartXp']
+		if(challenge['completed'] == True):
+			challenge['senderGains'] = challenge["senderEndXp"]
+			challenge['receiverGains'] = challenge['receiverEndXp']	
+		else:
+			challenge['senderGains'] = send['xp'] - challenge['senderStartXp']
+			challenge['receiverGains'] = rec['xp'] - challenge['receiverStartXp']
+		
 
 		return challenge, 200
 	except Exception as e:
