@@ -428,8 +428,8 @@ def getChallenge(sender, receiver):
 
 		#calculate the current gains in xp since challenge began
 		if(challenge['completed'] == True):
-			challenge['senderGains'] = challenge["senderEndXp"]
-			challenge['receiverGains'] = challenge['receiverEndXp']	
+			challenge['senderGains'] = challenge["senderEndXp"] - challenge['senderStartXp']
+			challenge['receiverGains'] = challenge['receiverEndXp']	- challenge['receiverStartXp']
 		else:
 			challenge['senderGains'] = send['xp'] - challenge['senderStartXp']
 			challenge['receiverGains'] = rec['xp'] - challenge['receiverStartXp']
