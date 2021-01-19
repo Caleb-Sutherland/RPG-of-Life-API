@@ -188,7 +188,7 @@ def complete():
 
 		#update player stat and xp
 		player = player_cursor.document(username).get().to_dict()
-		player_cursor.document(username).update({task['statType']: player[task['statType']]+task['statVal'], "xp": player['xp'] + task['statVal']})
+		player_cursor.document(username).update({task['statType']: player[task['statType']]+task['statVal'], "xp": player['xp'] + task['statVal'], "coins": player["coins"] + 5})
 
 		return jsonify({"success": True}), 200
 
